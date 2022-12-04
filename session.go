@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	expectedVersion     = "1.7.0"
+	expectedVersion     = "1.8.0"
 	websocketGatewayURL = "wss://puzzle.aggie.io/ws"
 	userAgent           = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
 )
@@ -21,6 +21,7 @@ var (
 
 type Options struct {
 	Room            string
+	Secret          string
 	UserName        string
 	UserColor       string
 	Debug           bool
@@ -80,11 +81,16 @@ func (s *Session) Run(ctx context.Context) {
 	go s.readLoop()
 	go s.writeLoop(s.ctx)
 
+	var secret *string = nil
+	if s.options.Secret != "" {
+		secret = &s.options.Secret
+	}
+
 	s.writeMessage(&JoinMessage{
 		UserName: s.options.UserName,
 		Color:    s.options.UserColor,
 		Room:     s.options.Room,
-		Secret:   nil,
+		Secret:   secret,
 	})
 
 	<-s.ctx.Done()
