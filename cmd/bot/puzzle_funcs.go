@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-const (
-	delay = time.Microsecond * 500
-)
-
 type region struct {
 	startRow, startCol, endRow, endCol uint16
+}
+
+func waitDelay() {
+	time.Sleep(*delayFlag)
 }
 
 func combineRegion(session *puzzle.Session, state *puzzle.SessionState, reg region, x, y float32, force bool) {
@@ -37,7 +37,7 @@ func combineRegion(session *puzzle.Session, state *puzzle.SessionState, reg regi
 
 			if i != root {
 				session.CombinePieces(root, i, x, y)
-				time.Sleep(delay)
+				waitDelay()
 			}
 		}
 	}
@@ -72,7 +72,7 @@ func solveEdges(session *puzzle.Session, state *puzzle.SessionState) {
 		i := rc(0, col, cols)
 		if i != root {
 			session.CombinePieces(root, i, centerX, centerY)
-			time.Sleep(delay)
+			waitDelay()
 		}
 	}
 
@@ -80,12 +80,12 @@ func solveEdges(session *puzzle.Session, state *puzzle.SessionState) {
 		i := rc(row, 0, cols)
 		if i != root {
 			session.CombinePieces(root, i, centerX, centerY)
-			time.Sleep(delay)
+			waitDelay()
 		}
 		i = rc(row, cols-1, cols)
 		if i != root {
 			session.CombinePieces(root, i, centerX, centerY)
-			time.Sleep(delay)
+			waitDelay()
 		}
 	}
 
@@ -93,7 +93,7 @@ func solveEdges(session *puzzle.Session, state *puzzle.SessionState) {
 		i := rc(rows-1, col, cols)
 		if i != root {
 			session.CombinePieces(root, i, centerX, centerY)
-			time.Sleep(delay)
+			waitDelay()
 		}
 	}
 }

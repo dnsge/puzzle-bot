@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	defaultDelay = time.Microsecond * 500
+)
+
 var (
 	userNameFlag  = flag.String("name", "Puzzle Bot", "User display name")
 	userColorFlag = flag.String("color", "#00ff00", "User display color")
@@ -19,6 +23,7 @@ var (
 	completeFlag = flag.Bool("complete", false, "Solve puzzle completely")
 	regionFlag   = flag.String("region", "", "Solve region from (row,col):(row2,col2)")
 
+	delayFlag           = flag.Duration("delay", defaultDelay, "Delay between actions")
 	debugFlag           = flag.Bool("debug", false, "Show debug information")
 	overrideVersionFlag = flag.Bool("override-version", false, "Override the server version check")
 	forceFlag           = flag.Bool("force", false, "Force operation even if root is not found or locked")
@@ -29,8 +34,12 @@ func init() {
 }
 
 func main() {
+	if *roomFlag == "" {
+		log.Fatalln("You must specify --room")
+	}
+
 	if !*edgesFlag && !*completeFlag && *regionFlag == "" {
-		log.Fatalln("Specify one of --edges, --complete, or --region (row,col):(row:col)")
+		log.Fatalln("You must specify one of --edges, --complete, or --region (row,col):(row:col)")
 	}
 
 	var reg region
