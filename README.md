@@ -14,8 +14,8 @@ go run ./cmd/bot \
 
 Where `[action flag]` is one of the following:
 ```
---edges:                  Complete the edges of the puzzle
---complete:               Complete the entire puzzle
+--edges                   Complete the edges of the puzzle
+--complete                Complete the entire puzzle
 --region (r1,c1):(r2,c2)  Complete the region of the puzzle defined 
                           by the top left and bottom right corners
 ```
