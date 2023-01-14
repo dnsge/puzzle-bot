@@ -228,5 +228,5 @@ func (s *Session) debug(format string, v ...any) {
 type puzzleVersionError string
 
 func (e *puzzleVersionError) Error() string {
-	return fmt.Sprintf("Unexpected puzzle server verseion %s (wanted %s). Enable puzzle.Options.OverrideVersion to ignore.", *e, expectedVersion)
+	return fmt.Sprintf("Unexpected puzzle server version %s (wanted %s). Enable puzzle.Options.OverrideVersion to ignore.", *e, expectedVersion)
 }
