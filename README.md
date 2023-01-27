@@ -1,5 +1,7 @@
 # puzzle-bot
 
+**This library is now broken. I do not plan to update it. I added code to compute a dynamic challenge introduced to prove that the user is using a browser, but it seems like message construction was changed. I don't feel like reverse engineering the puzzle website's code again, but people are welcome to try on their own. Sorry!**
+
 A library for creating bots for the interactive jigsaw puzzle https://puzzle.aggie.io.
 
 ## Usage
