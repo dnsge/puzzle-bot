@@ -7,16 +7,23 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"regexp"
+	"strconv"
 )
 
 const (
-	expectedVersion     = "1.8.0"
+	challengeVersion    = "x"
+	expectedVersion     = "1.8.5"
 	websocketGatewayURL = "wss://puzzle.aggie.io/ws"
 	userAgent           = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
+
+	fixedA = uint32(123)
+	fixedB = uint32(765)
 )
 
 var (
-	pongMessage = &PongMessage{}
+	pongMessage    = &PongMessage{}
+	challengeRegex = regexp.MustCompile("^return a\\*(?P<A>\\d+)-!0\\+b\\*(?P<B>\\d+)-(?P<C>\\d+)$")
 )
 
 type Options struct {
@@ -81,6 +88,10 @@ func (s *Session) Run(ctx context.Context) {
 	go s.readLoop()
 	go s.writeLoop(s.ctx)
 
+	<-s.ctx.Done()
+}
+
+func (s *Session) sendJoin() {
 	var secret *string = nil
 	if s.options.Secret != "" {
 		secret = &s.options.Secret
@@ -92,8 +103,6 @@ func (s *Session) Run(ctx context.Context) {
 		Room:     s.options.Room,
 		Secret:   secret,
 	})
-
-	<-s.ctx.Done()
 }
 
 // Exit closes the puzzle session.
@@ -150,6 +159,10 @@ func (s *Session) processJSON(data []byte) error {
 
 	switch msg.Type {
 	case "version":
+		if msg.Version == challengeVersion { // ignore in favor of challenge
+			return nil
+		}
+
 		log.Printf("Joined Puzzle server version %s\n", msg.Version)
 		if msg.Version != expectedVersion && !s.options.OverrideVersion {
 			e := puzzleVersionError(msg.Version)
@@ -192,6 +205,10 @@ func (s *Session) processBinary(data []byte) error {
 	switch messageType {
 	case messagePing:
 		s.writeMessage(pongMessage)
+	case messageChallenge:
+		err = s.handleChallenge(view)
+	case messageUserID:
+		s.handleUserID(view)
 	}
 
 	if err != nil {
@@ -199,6 +216,53 @@ func (s *Session) processBinary(data []byte) error {
 	} else {
 		return nil
 	}
+}
+
+func (s *Session) handleChallenge(view DataView) error {
+	pos := 3
+	version, consumed := view.ReadString(pos)
+	pos += consumed
+
+	if version != expectedVersion && !s.options.OverrideVersion {
+		e := puzzleVersionError(version)
+		return &e
+	}
+
+	challenge, _ := view.ReadString(pos)
+	matches := challengeRegex.FindStringSubmatch(challenge)
+	if len(matches) != 4 {
+		return fmt.Errorf("unexpected challenge form %q", challenge)
+	}
+
+	aCoeff, err := strconv.ParseUint(matches[1], 10, 32)
+	if err != nil {
+		return err
+	}
+	bCoeff, err := strconv.ParseUint(matches[2], 10, 32)
+	if err != nil {
+		return err
+	}
+	c, err := strconv.ParseUint(matches[3], 10, 32)
+	if err != nil {
+		return err
+	}
+
+	challengeResult := executeChallenge(uint32(aCoeff), uint32(bCoeff), uint32(c), fixedA, fixedB)
+	challengeResponse := &ChallengeResponseMessage{Value: challengeResult}
+	s.writeMessage(challengeResponse)
+	s.sendJoin()
+
+	return nil
+}
+
+func executeChallenge(aCoeff, bCoeff, c, a, b uint32) uint32 {
+	return aCoeff*a + bCoeff*b - c - 1
+}
+
+func (s *Session) handleUserID(view DataView) {
+	id := view.Uint16(1)
+	s.state.UserID = id
+	log.Printf("Got my user ID of %d\n", id)
 }
 
 func (s *Session) writeMessage(message Message) {

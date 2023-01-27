@@ -3,14 +3,17 @@ package puzzle
 import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"strconv"
 )
 
 const (
-	messagePing    = 11
-	messagePickUp  = 1
-	messageMove    = 2
-	messagePutDown = 3
-	messageCombine = 6
+	messagePing      = 11
+	messagePickUp    = 1
+	messageMove      = 2
+	messagePutDown   = 3
+	messageCombine   = 6
+	messageChallenge = 12
+	messageUserID    = 15
 )
 
 type Message interface {
@@ -158,4 +161,23 @@ func (m *CombinePiecesMessage) Encode(state *SessionState) (int, []byte, error) 
 
 func (m *CombinePiecesMessage) Name() string {
 	return "CombinePiecesMessage"
+}
+
+type ChallengeResponseMessage struct {
+	Value uint32
+}
+
+func (m *ChallengeResponseMessage) Encode(*SessionState) (int, []byte, error) {
+	strRepresentation := strconv.FormatInt(int64(m.Value), 10)
+
+	buf := make([]byte, 3+len(strRepresentation))
+	view := DataView(buf)
+
+	view.PutUint8(messageChallenge, 0)
+	view.PutRawBytes([]byte(strRepresentation), 3)
+	return websocket.BinaryMessage, buf, nil
+}
+
+func (m *ChallengeResponseMessage) Name() string {
+	return "ChallengeResponseMessage"
 }

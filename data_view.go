@@ -53,3 +53,18 @@ func (view DataView) PutFloat32(val float32, offset int) {
 	bits := math.Float32bits(val)
 	order.PutUint32(view[offset:offset+4], bits)
 }
+
+// ReadString reads a length-prefixed string starting at the given offset.
+// Returns the string read and the number of bytes read in total (length of
+// string plus 2 bytes for length prefix).
+func (view DataView) ReadString(offset int) (string, int) {
+	length := view.Uint16(offset)
+	start := uint16(offset + 2)
+	strBytes := view[start : start+length]
+	return string(strBytes), int(2 + length)
+}
+
+// PutRawBytes copies the bytes from data at the given offset.
+func (view DataView) PutRawBytes(data []byte, offset int) {
+	copy(view[offset:], data)
+}
